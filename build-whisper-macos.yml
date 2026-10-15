@@ -1,0 +1,76 @@
+# 构建 macOS arm64 的 whisper-cli（语音转字幕本地引擎的 mac 托管件，2026-10-15 方案 A）。
+#
+# 背景：whisper.cpp 上游 release 不发 mac 二进制（只有 Win/Ubuntu/xcframework 库），mac 用户此前只能
+# 自己 brew install——对非开发者不友好。此 workflow 在 GitHub 的 macos runner 上构建一次，把产物传成
+# release 资产；应用侧按 manifest 条目一键下载（与 Windows 同款体验）。
+#
+# 用法：Actions → Build whisper.cpp for macOS arm64 → Run workflow（默认 ref=b4938，与 Windows 清单钉的
+# 上游版本一致）。完成后到 Releases 找 tag `engine-whisper-macos-arm64`，把日志里的 sha256 与资产大小
+# 记回 `src/domains/processing/local-ai-components.json` 的 mac 引擎条目。
+#
+# 手动兜底（不想用 CI 时，在 Mac mini 上跑——需 Xcode 命令行工具 + cmake）：
+#   git clone --depth 1 --branch b4938 https://github.com/ggml-org/whisper.cpp
+#   cd whisper.cpp && cmake -B build -DCMAKE_OSX_ARCHITECTURES=arm64 && cmake --build build -j --config Release
+#   tar -czf whisper-cli-macos-arm64-b4938.tar.gz -C build/bin whisper-cli
+#   shasum -a 256 whisper-cli-macos-arm64-b4938.tar.gz
+# 然后网页上传到 Releases（tag 同名顺接）。
+name: Build whisper.cpp for macOS arm64
+
+on:
+  workflow_dispatch:
+    inputs:
+      ref:
+        description: whisper.cpp tag/commit to build
+        required: true
+        default: b4938
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: macos-14
+    steps:
+      - name: Checkout whisper.cpp at ${{ inputs.ref }}
+        uses: actions/checkout@v4
+        with:
+          repository: ggml-org/whisper.cpp
+          ref: ${{ inputs.ref }}
+          path: whisper.cpp
+
+      - name: Build whisper-cli (Metal 默认生效，静态构建单文件)
+        working-directory: whisper.cpp
+        run: |
+          cmake -B build -DCMAKE_OSX_ARCHITECTURES=arm64 -DGGML_METAL=ON -DBUILD_SHARED_LIBS=OFF
+          cmake --build build -j --config Release
+
+      - name: Package tar.gz
+        working-directory: whisper.cpp
+        run: |
+          mkdir -p package
+          cp build/bin/whisper-cli package/
+          # MIT 再分发合规：版权与许可随包带上。
+          cp LICENSE package/LICENSE-whisper.cpp
+          # 静态构建下没有 dylib；防御性带上万一有（引擎安装是「解压目录 + entryPath」模型，多文件无碍）。
+          find build -maxdepth 2 -name '*.dylib' -exec cp {} package/ \;
+          tar -czf "whisper-cli-macos-arm64-${{ inputs.ref }}.tar.gz" -C package .
+
+      - name: Report hash and size
+        working-directory: whisper.cpp
+        run: |
+          ASSET="whisper-cli-macos-arm64-${{ inputs.ref }}.tar.gz"
+          SHA=$(shasum -a 256 "$ASSET" | awk '{print $1}')
+          SIZE=$(stat -f%z "$ASSET")
+          echo "asset=$ASSET" >> "$GITHUB_STEP_SUMMARY"
+          echo "sha256=$SHA" >> "$GITHUB_STEP_SUMMARY"
+          echo "archiveSize=$SIZE" >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Upload to release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: engine-whisper-macos-arm64
+          name: macOS 本地引擎资产（whisper-cli）
+          body: |
+            语音转字幕本地引擎（macOS arm64）的托管件，供应用内一键下载使用。
+            构建源：ggml-org/whisper.cpp @ ${{ inputs.ref }}（Metal 加速内置）。
+          files: whisper.cpp/whisper-cli-macos-arm64-${{ inputs.ref }}.tar.gz
