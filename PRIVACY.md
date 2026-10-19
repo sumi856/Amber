@@ -57,6 +57,12 @@ Amber 浏览器扩展不向开发者、广告商、数据分析服务或任何�
 
 如果本政策发生实质性变化，会更新顶部生效日期，并在发布仓库中提供最新版本。继续使用扩展即表示接受更新后的政策。
 
+## Chrome Web Store 数据使用对照
+
+- **网络记录（Web history）**：扩展处理当前页面 URL、页面标题和媒体请求 URL；仅在本机内存/会话中使用，不上传。
+- **网站内容（Website content）**：扩展读取页面中的 `<video>` 元素、页面标题，以及用户启用流选项后命中的 `.m3u8` / `.mpd` 清单文本；仅在本机解析，不上传。
+- 不处理个人身份、健康、财务、身份验证、个人通讯或位置数据；不记录点击、鼠标位置、滚动或键盘操作历史。
+
 ## 联系方式
 
 如对本政策有疑问，请在本项目的公开资产仓提交 Issue：
@@ -118,6 +124,12 @@ The extension is not directed to children under 13 and does not knowingly collec
 ## Changes
 
 If this policy changes materially, the effective date above will be updated and the latest version will remain available in the public repository.
+
+## Chrome Web Store data-use mapping
+
+- **Web history**: the extension handles the current page URL, page title, and media request URLs; this stays in local memory/session storage and is not uploaded.
+- **Website content**: the extension reads `<video>` elements, page title, and (when stream sniffing is enabled) `.m3u8` / `.mpd` manifest text; parsing stays local and is not uploaded.
+- It does not handle personally identifying, health, financial, authentication, personal communications, or location data, and does not record click, pointer, scroll, or keyboard activity history.
 
 ## Contact
 
