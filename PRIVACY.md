@@ -10,7 +10,7 @@ Amber 浏览器扩展不向开发者、广告商、数据分析服务或任何�
 ## 扩展处理的数据
 
 1. **页面地址与标题**：当用户点击悬浮条、右键菜单或 popup 中的交接入口时，扩展把当前页面 URL、页面标题和（如可识别）作品页 URL 交给本机 Amber，用于解析和下载。
-2. **媒体地址与基本响应信息**：仅在用户主动启用「流选项嗅探」并授予可选权限后，扩展观察当前页面的媒体响应，取得媒体 URL、内容类型和响应大小，用于列出可选媒体/画质。扩展不读取响应正文、Cookie、请求头或登录态，也不拦截或修改请求。
+2. **媒体地址与基本响应信息**：仅在用户主动启用「流选项嗅探」并授予可选权限后，扩展观察当前页面的媒体响应，取得媒体 URL、内容类型和响应大小，用于列出可选媒体/画质。`webRequest` 观察不读取响应正文；页面 hook 只对 `.m3u8` / `.mpd` 清单读取最多 512KB 文本以解析画质/变体，不读取其他响应正文。扩展不读取 Cookie、请求头或登录态，也不拦截或修改请求。
 3. **本地设置**：悬浮条外观、popup 主题、待处理交接状态（标题、URL、时间，最长保留 10 分钟）保存在浏览器本地存储中。
 4. **任务状态**：扩展从本机 Amber 读取最近任务的状态、进度和标题，用于 popup 回显；这些数据由本机 Amber 产生并保存在用户设备上。
 
@@ -36,7 +36,7 @@ Amber 浏览器扩展不向开发者、广告商、数据分析服务或任何�
 
 - 待处理交接状态最长保留 10 分钟，或在对应下载任务出现后删除。
 - 悬浮条外观和 popup 主题一直保存在浏览器扩展存储中，直到用户修改、清除扩展数据或卸载扩展。
-- 媒体候选只保存在当前浏览器会话/内存中，关闭标签页或浏览器后清除。
+- 媒体候选保存在浏览器会话存储/内存中，通常随标签页或浏览器关闭清除；不支持会话存储的浏览器会退化到本地存储，但同样不会上传。
 - 下载任务、历史记录和文件由本机 Amber 桌面应用管理，用户可在应用中删除；扩展不保存这些文件的副本。
 - 用户可以随时：
   - 在浏览器扩展页停用或卸载扩展；
@@ -77,7 +77,7 @@ The Amber browser extension does not send data to the developer, advertisers, an
 ## Data processed by the extension
 
 1. **Page URL and title**: when the user clicks the floating bar, a context menu, or the popup handoff entry, the extension sends the current page URL, page title, and (when identifiable) the work-page URL to the local Amber app for parsing and downloading.
-2. **Media URLs and basic response metadata**: only after the user explicitly enables “stream sniffing” and grants the optional permissions, the extension observes media responses on the current page and records the media URL, content type, and response size to list available media/qualities. It does not read response bodies, cookies, request headers, or login state, and it does not block or modify requests.
+2. **Media URLs and basic response metadata**: only after the user explicitly enables “stream sniffing” and grants the optional permissions, the extension observes media responses on the current page and records the media URL, content type, and response size to list available media/qualities. `webRequest` observation does not read response bodies; the page hook reads only `.m3u8` / `.mpd` manifest text (up to 512 KB) to parse quality variants, and does not read other response bodies. It does not read cookies, request headers, or login state, and it does not block or modify requests.
 3. **Local settings**: bar skin, popup theme, and pending handoff status (title, URL, timestamp; retained for up to 10 minutes) are stored in browser local storage.
 4. **Task status**: the extension reads recent task state, progress, and titles from the local Amber app for display in the popup. This data is produced and stored locally by Amber.
 
@@ -103,7 +103,7 @@ All processing stays on the user's device. The extension does not upload this da
 
 - Pending handoff state is retained for at most 10 minutes or until the corresponding download task appears.
 - Bar skin and popup theme remain in extension storage until the user changes them, clears extension data, or uninstalls the extension.
-- Media candidates remain in the current browser session/memory and are cleared when the tab or browser closes.
+- Media candidates remain in browser session storage/memory and are normally cleared when the tab or browser closes. Browsers without session storage fall back to local storage; they are still not uploaded.
 - Download tasks, history, and files are managed by the local Amber desktop application and can be deleted there; the extension does not keep copies of those files.
 - Users can at any time disable or uninstall the extension, revoke site access or optional permissions from the browser's extension settings, turn off “stream sniffing” in the popup, clear extension data, or delete download history and local files in Amber.
 
